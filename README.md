@@ -41,7 +41,7 @@ The goal of this task is to:
 
 ### 3. Add Suricata to Environment Path
 To use `suricata.exe` from any directory, add this to your PATH:
-```text
+
  `C:\Program Files\Suricata`
 
 Configuration Steps
