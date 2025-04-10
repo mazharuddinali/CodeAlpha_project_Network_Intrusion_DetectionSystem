@@ -1,90 +1,113 @@
 # CodeAlpha_project_Network_Intrusion_DetectionSystem
-# 🛡️ Network Intrusion Detection System (NIDS) using Suricata
+Network Intrusion Detection System using Suricata (Windows Setup)
+Overview
+This project sets up a Network-based Intrusion Detection System (NIDS) using Suricata on a Windows machine. Suricata is a powerful open-source threat detection engine capable of real-time intrusion detection (IDS), inline intrusion prevention (IPS), network security monitoring (NSM), and offline pcap processing.
 
-This project demonstrates a working **Network-Based Intrusion Detection System (NIDS)** using **Suricata**, a powerful open-source threat detection engine. It monitors network traffic, detects suspicious activities (like ping floods, port scans, etc.), and logs alerts.
+This README guides you through:
 
----
+Installing Suricata
 
-## 📌 Objective
+Configuring rules (including custom local rules)
 
-The goal of this task is to:
+Generating suspicious traffic
 
-- Install and configure a NIDS (Suricata) on Windows
-- Add or customize rule sets to detect suspicious network activity
-- Generate real-time alerts
-- Optionally visualize the alerts from logs
-- Simulate test attacks like ICMP ping, port scans, etc.
+Monitoring alerts
 
----
+Parsing logs using Python
 
-## 🧰 Tools & Technologies
+🧰 Requirements
+Windows OS
 
-| Tool         | Description                                |
-|--------------|--------------------------------------------|
-| Suricata     | Open-source NIDS/IPS/NSM engine            |
-| WinPcap/Npcap| Network packet capture drivers for Windows |
-| Windows CMD  | Used to run Suricata and simulate attacks  |
-| Notepad/IDE  | Edit rule files and configuration files    |
+Python (for log parsing)
 
----
+WinPcap/Npcap (required by Suricata)
 
-## 🛠️ Installation & Setup
+Suricata for Windows
 
-### 1. Download & Install Suricata (Windows)
-- Download from: [https://suricata.io/download/](https://suricata.io/download/)
-- Install and ensure it's placed in:  
-  `C:\Program Files\Suricata`
+✅ Installation Steps
+1. Install Npcap
+Suricata depends on Npcap for packet capturing.
 
-### 2. Install WinPcap or Npcap
-- Download and install from:  
-  [https://npcap.com/#download](https://npcap.com/#download)
+Download Npcap: https://nmap.org/npcap/
 
-### 3. Add Suricata to Environment Path
-To use `suricata.exe` from any directory, add this to your PATH:
+Run the installer and make sure the following options are checked:
 
- `C:\Program Files\Suricata`
+Install Npcap in WinPcap API-compatible Mode
 
-Configuration Steps
-4. Verify Installation
-Run:
-suricata.exe -V
-5. Configure the suricata.yaml
-Update default-rule-path and enable local.rules in:
-C:\Program Files\Suricata\suricata.yaml
-Ensure it includes:
+Support loopback traffic ('Npcap Loopback Adapter')
+
+2. Install Suricata
+Download Suricata for Windows: https://www.openinfosecfoundation.org/download/
+
+Install it to the default location:
+C:\Program Files\Suricata
+
+3. Update Rules (Optional but Recommended)
+Suricata includes a rule updater, but on Windows, it might not be pre-installed.
+
+You can manually download the Emerging Threats rules, extract them, and move selected .rules files to:
+`C:\Program Files\Suricata\rules`
+Update suricata.yaml to include these rule files if needed.
+
+4. Add a Local Rule
+1) Navigate to:
+C:\Program Files\Suricata\rules
+2) Create a file named local.rules if it doesn't exist.
+
+3)  Open it as Administrator and paste the following sample rule:
+alert icmp any any -> any any (msg:"ICMP Ping Detected"; sid:1000001; rev:1;)
+
+4) In suricata.yaml, make sure local.rules is included. Look for the rule-files section and verify:
 rule-files:
   - local.rules
-6. Create & Add Rules (Including local.rules)
-What is local.rules?
 
-local.rules is a custom rule file where you can define network intrusion detection rules.
-
-By default, this file may not be present in your installation directory, so you can create it manually.
-
-How to Get local.rules:
-
-Option 1: Create local.rules from scratch
-
-Navigate to the rules directory:
-C:\Program Files\Suricata\rules\
-Create a file called local.rules and add custom rules.
-Option 2: Download Sample Rules
-
-Suricata comes with predefined rule sets (some can be downloaded from online repositories).
-
-If you need to download a rule set:
-
-Get Emerging Threats (ET) Rules:
-
-Use the following link to get rules:
-Emerging Threats Rule Sets
-
-Extract the .tar.gz file and place the .rules files in the Suricata rules directory (C:\Program Files\Suricata\rules\).
-
-Make sure to include a reference to these rule files in the suricata.yaml configuration.
-
-Running Suricata
-✅ Test Configuration
+5. Run Suricata in Test Mode (Verify Setup)
+Open Command Prompt as Administrator:
+cd "C:\Program Files\Suricata"
 suricata.exe -T -c "C:\Program Files\Suricata\suricata.yaml" -v
-✅ Start Live Capture
-suricata.exe -c "C:\Program Files\Suricata\suricata.yaml" -i <Interface_Number> -v
+This will validate your configuration and rules.
+
+6. Run Suricata to Monitor Traffic
+Run this to start Suricata in IDS mode:
+
+suricata.exe -c "C:\Program Files\Suricata\suricata.yaml" -i 1 -v
+
+Replace -i 1 with your actual network interface number if different.
+
+
+7. Generate Suspicious Activity
+To trigger the sample rule, open Command Prompt and ping any address:
+
+ping 8.8.8.8
+Suricata will log this ICMP activity as an alert based on the rule.
+
+8. Parse Alerts using Python
+Use this Python script to parse the alerts from eve.json:
+
+``import json
+import os
+
+log_file = "C:\\Program Files\\Suricata\\log\\eve.json"
+
+if not os.path.exists(log_file):
+    print("eve.json not found.")
+else:
+    with open(log_file, "r") as file:
+        for line in file:
+            try:
+                data = json.loads(line)
+                if "alert" in data:
+                    print(f"\nALERT: {data['alert']['signature']}")
+                    print(f"Source IP: {data['src_ip']} -> Destination IP: {data['dest_ip']}")
+                    print(f"Timestamp: {data['timestamp']}")
+            except json.JSONDecodeError:
+                continue``
+
+💡 How to Add More Rules?
+Download additional .rules files (e.g., from Emerging Threats).
+
+Place them in C:\Program Files\Suricata\rules.
+
+Add filenames to the rule-files list in suricata.yaml.
+
+Restart Suricata.
